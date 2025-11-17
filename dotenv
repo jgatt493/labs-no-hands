@@ -1,0 +1,12 @@
+# Deepgram API Key
+DEEPGRAM_API_KEY=74de90bc508d240d7efd614a9f706d0969e39b17
+
+# Optional: Deepgram model (default: nova-2)
+DEEPGRAM_MODEL=nova-2
+
+# Optional: Log level (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL=INFO
+
+# Optional: Config file path (default: ./config/commands.yaml)
+CONFIG_PATH=./config/commands.yaml
+

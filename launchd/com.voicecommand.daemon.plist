@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.voicecommand.daemon</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/jeremygatt/Projects/voice-command-mac/src/main.py</string>
+        <string>run</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/jeremygatt/.voice-command/logs/voice-command.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/jeremygatt/.voice-command/logs/voice-command-error.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- Set nice/priority for background process -->
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <!-- Restart on failure -->
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+</dict>
+</plist>
+

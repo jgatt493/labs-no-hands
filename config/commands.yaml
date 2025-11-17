@@ -1,0 +1,449 @@
+config:
+  # Deepgram settings
+  deepgram_model: "nova-3"
+  interim_results: true
+  punctuate: true
+  endpointing: true
+  
+  # Command matching
+  confidence_threshold: 0.75
+  match_threshold: 0.80  # fuzzywuzzy ratio (0-1)
+  
+  # Audio settings
+  sample_rate: 16000
+  channels: 1
+  chunk_size: 4096
+  
+  # Feedback
+  enable_feedback: true
+  feedback_type: "visual"  # visual, audio, or both
+
+commands:
+  # Smart chat focus - context-aware for different apps
+  - id: "focus_chat"
+    triggers:
+      - "focus chat"
+      - "click chat"
+      - "focus cursor chat"
+      - "chat focus"
+    action: click
+    # Default coordinates (if active app not found)
+    coordinates: [1449, 912]
+    # App-specific coordinates
+    app_coordinates:
+      Cursor: [1449, 912]
+      "Google Chrome": [2116, 87]  # Chrome search/address bar
+      Safari: [1920, 45]  # Safari search bar
+    feedback: "Focusing chat"
+
+  # File explorer
+  - id: "open_files"
+    triggers:
+      - "open files"
+      - "file explorer"
+      - "open file browser"
+      - "files"
+    action: keystroke
+    keys: ["cmd", "b"]
+    feedback: "Opening files panel"
+
+  # Terminal
+  - id: "open_terminal"
+    triggers:
+      - "open terminal"
+      - "terminal"
+      - "new terminal"
+    action: launch
+    app: "Terminal"
+    feedback: "Opening terminal"
+
+  # Browser
+  - id: "open_chrome"
+    triggers:
+      - "open chrome"
+      - "open browser"
+      - "chrome"
+      - "browser"
+    action: launch
+    app: "Google Chrome"
+    feedback: "Opening Chrome"
+
+  # App switcher
+  - id: "switch_app"
+    triggers:
+      - "switch app"
+      - "next app"
+      - "tab window"
+    action: keystroke
+    keys: ["cmd", "tab"]
+    feedback: "Switching app"
+
+  # Code editing shortcuts
+  - id: "comment_line"
+    triggers:
+      - "comment"
+      - "toggle comment"
+      - "comment line"
+    action: keystroke
+    keys: ["cmd", "slash"]
+    feedback: "Toggled comment"
+
+  - id: "duplicate_line"
+    triggers:
+      - "duplicate"
+      - "duplicate line"
+    action: keystroke
+    keys: ["cmd", "shift", "d"]
+    feedback: "Duplicated line"
+
+  - id: "delete_line"
+    triggers:
+      - "delete line"
+      - "remove line"
+    action: keystroke
+    keys: ["cmd", "shift", "k"]
+    feedback: "Deleted line"
+
+  # Copy
+  - id: "copy"
+    triggers:
+      - "copy"
+      - "copy that"
+    action: keystroke
+    keys: ["cmd", "c"]
+    feedback: "Copied"
+
+  # Paste
+  - id: "paste"
+    triggers:
+      - "paste"
+      - "paste that"
+    action: keystroke
+    keys: ["cmd", "v"]
+    feedback: "Pasted"
+
+  # Undo
+  - id: "undo"
+    triggers:
+      - "undo"
+      - "undo that"
+    action: keystroke
+    keys: ["cmd", "z"]
+    feedback: "Undo"
+
+  # Save
+  - id: "save"
+    triggers:
+      - "save"
+      - "save file"
+      - "save that"
+    action: keystroke
+    keys: ["cmd", "s"]
+    feedback: "Saving"
+
+  # Zoom in
+  - id: "zoom_in"
+    triggers:
+      - "zoom in"
+      - "bigger"
+    action: keystroke
+    keys: ["cmd", "plus"]
+    feedback: "Zooming in"
+
+  # Zoom out
+  - id: "zoom_out"
+    triggers:
+      - "zoom out"
+      - "smaller"
+    action: keystroke
+    keys: ["cmd", "minus"]
+    feedback: "Zooming out"
+
+  # Search
+  - id: "search"
+    triggers:
+      - "search"
+      - "find"
+      - "search for"
+    action: keystroke
+    keys: ["cmd", "f"]
+    feedback: "Opening search"
+
+  # Close window
+  - id: "close_window"
+    triggers:
+      - "close window"
+      - "close this"
+      - "close"
+    action: keystroke
+    keys: ["cmd", "w"]
+    feedback: "Closing window"
+
+  # New window
+  - id: "new_window"
+    triggers:
+      - "new window"
+      - "open new window"
+    action: keystroke
+    keys: ["cmd", "n"]
+    feedback: "Opening new window"
+
+  # Refresh
+  - id: "refresh"
+    triggers:
+      - "refresh"
+      - "reload"
+    action: keystroke
+    keys: ["cmd", "r"]
+    feedback: "Refreshing"
+
+  # Dictation mode
+  - id: "start_dictation"
+    triggers:
+      - "dictate"
+      - "start dictation"
+      - "dictation mode"
+    action: mode
+    mode: "dictation"
+    feedback: "Dictation mode started"
+
+  # Stop dictation
+  - id: "stop_dictation"
+    triggers:
+      - "stop dictation"
+      - "end dictation"
+      - "done"
+    action: mode
+    mode: "normal"
+    feedback: "Dictation mode stopped"
+
+  # Cursor AI commands
+  - id: "cursor_chat"
+    triggers:
+      - "chat"
+      - "cursor chat"
+      - "ask cursor"
+      - "open chat"
+    action: keystroke
+    keys: ["cmd", "k"]
+    feedback: "Opening Cursor chat"
+
+  - id: "cursor_edit"
+    triggers:
+      - "edit"
+      - "cursor edit"
+      - "inline edit"
+    action: keystroke
+    keys: ["cmd", "i"]
+    feedback: "Opening cursor edit"
+
+  - id: "cursor_composer"
+    triggers:
+      - "composer"
+      - "multi edit"
+      - "open composer"
+    action: keystroke
+    keys: ["cmd", "shift", "l"]
+    feedback: "Opening Cursor composer"
+
+  # Launch Cursor
+  - id: "open_cursor"
+    triggers:
+      - "open cursor"
+      - "launch cursor"
+      - "cursor"
+    action: launch
+    app: "Cursor"
+    feedback: "Opening Cursor"
+
+  # Window resizing (using macOS Mission Control + arrow keys)
+  - id: "maximize_window"
+    triggers:
+      - "maximize"
+      - "full screen"
+      - "maximize window"
+    action: keystroke
+    keys: ["cmd", "ctrl", "f"]
+    feedback: "Maximizing window"
+
+  - id: "minimize_window"
+    triggers:
+      - "minimize"
+      - "minimize window"
+    action: keystroke
+    keys: ["cmd", "m"]
+    feedback: "Minimizing window"
+
+  # Tile windows (macOS Mission Control snapping)
+  - id: "tile_left"
+    triggers:
+      - "tile left"
+      - "snap left"
+      - "window left"
+    action: keystroke
+    keys: ["cmd", "ctrl", "left"]
+    feedback: "Tiling window to left"
+
+  - id: "tile_right"
+    triggers:
+      - "tile right"
+      - "snap right"
+      - "window right"
+    action: keystroke
+    keys: ["cmd", "ctrl", "right"]
+    feedback: "Tiling window to right"
+
+  - id: "tile_up"
+    triggers:
+      - "tile up"
+      - "snap top"
+      - "window top"
+    action: keystroke
+    keys: ["cmd", "ctrl", "up"]
+    feedback: "Tiling window to top"
+
+  - id: "tile_down"
+    triggers:
+      - "tile down"
+      - "snap bottom"
+      - "window bottom"
+    action: keystroke
+    keys: ["cmd", "ctrl", "down"]
+    feedback: "Tiling window to bottom"
+
+  # Focus apps
+  - id: "focus_chrome"
+    triggers:
+      - "focus chrome"
+      - "focus google chrome"
+      - "switch to chrome"
+      - "chrome"
+    action: focus
+    app: "Google Chrome"
+    feedback: "Focusing Chrome"
+
+  - id: "focus_safari"
+    triggers:
+      - "focus safari"
+      - "switch to safari"
+      - "safari"
+    action: focus
+    app: "Safari"
+    feedback: "Focusing Safari"
+
+  - id: "focus_vscode"
+    triggers:
+      - "focus vscode"
+      - "focus code"
+      - "switch to vscode"
+      - "vscode"
+    action: focus
+    app: "Visual Studio Code"
+    feedback: "Focusing VS Code"
+
+  - id: "focus_terminal"
+    triggers:
+      - "focus terminal"
+      - "switch to terminal"
+      - "terminal focus"
+    action: focus
+    app: "Terminal"
+    feedback: "Focusing Terminal"
+
+  - id: "focus_finder"
+    triggers:
+      - "focus finder"
+      - "switch to finder"
+      - "finder"
+    action: focus
+    app: "Finder"
+    feedback: "Focusing Finder"
+
+  # Send/Submit via Enter key
+  - id: "send"
+    triggers:
+      - "send"
+      - "submit"
+      - "enter"
+      - "return"
+    action: keystroke
+    keys: ["return"]
+    feedback: "Sending"
+
+  # Show available commands
+  - id: "show_help"
+    triggers:
+      - "help"
+      - "show commands"
+      - "list commands"
+      - "what can i do"
+      - "commands"
+    action: help
+    feedback: "Showing available commands"
+
+  # Scrolling
+  - id: "scroll_up"
+    triggers:
+      - "scroll up"
+      - "scroll up"
+      - "page up"
+    action: keystroke
+    keys: ["pageup"]
+    feedback: "Scrolling up"
+
+  - id: "scroll_down"
+    triggers:
+      - "scroll down"
+      - "page down"
+    action: keystroke
+    keys: ["pagedown"]
+    feedback: "Scrolling down"
+
+  - id: "scroll_top"
+    triggers:
+      - "scroll top"
+      - "go to top"
+      - "top"
+    action: keystroke
+    keys: ["cmd", "Home"]
+    feedback: "Scrolling to top"
+
+  - id: "scroll_bottom"
+    triggers:
+      - "scroll bottom"
+      - "go to bottom"
+      - "bottom"
+    action: keystroke
+    keys: ["cmd", "End"]
+    feedback: "Scrolling to bottom"
+
+  # Spotify controls
+  - id: "toggle_spotify"
+    triggers:
+      - "play"
+      - "pause"
+      - "toggle music"
+      - "play pause"
+      - "stop music"
+    action: keystroke
+    keys: ["f8"]
+    feedback: "Toggling Spotify"
+
+  - id: "spotify_next"
+    triggers:
+      - "next song"
+      - "next track"
+      - "skip"
+    action: keystroke
+    keys: ["f9"]
+    feedback: "Skipping to next track"
+
+  - id: "spotify_previous"
+    triggers:
+      - "previous song"
+      - "previous track"
+      - "back"
+    action: keystroke
+    keys: ["f7"]
+    feedback: "Going to previous track"
+

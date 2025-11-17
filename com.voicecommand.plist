@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.voicecommand.listener</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/jeremygatt/Projects/voice-command-mac/voice-command-startup.sh</string>
+    </array>
+    
+    <!-- Start on login -->
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <!-- Keep running - restart if it crashes -->
+    <key>KeepAlive</key>
+    <true/>
+    
+    <!-- Don't run multiple instances -->
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <!-- Standard output/error -->
+    <key>StandardOutPath</key>
+    <string>/Users/jeremygatt/.voice-command/logs/stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jeremygatt/.voice-command/logs/stderr.log</string>
+    
+    <!-- Wait 10 seconds before restarting if it crashes -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    
+    <!-- Delay startup by 5 seconds to give system time to initialize -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>
+
