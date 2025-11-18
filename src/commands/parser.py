@@ -244,9 +244,17 @@ class CommandParser:
             logger.info(f"✅ Matched: {cmd.id} (press command, score: {score:.2f})")
             return cmd, score
         
-        # LAYER 2: If in dictation mode, check exact-match dictation commands
+        # LAYER 2: If in dictation mode, prioritize context commands (for exit) then exact-match dictation
         if mode == "dictation":
-            logger.debug(f"LAYER 2: In dictation mode, checking exact-match commands")
+            logger.debug(f"LAYER 2a: In dictation mode, checking context commands for mode exit")
+            # Context commands like "stop dictation" should work even in dictation mode
+            context_result = self.context_parser.parse_context(transcript, mode)
+            if context_result:
+                cmd, score = context_result
+                logger.info(f"✅ Matched: {cmd.id} (dictation context-aware, score: {score:.2f})")
+                return cmd, score
+            
+            logger.debug(f"LAYER 2b: Checking exact-match dictation commands")
             dictation_result = self._try_dictation_exact_match(transcript, transcript_clean)
             if dictation_result:
                 cmd, score = dictation_result
@@ -254,7 +262,7 @@ class CommandParser:
                 return cmd, score
             
             # In dictation mode, if no exact match, ignore all other commands (type as text)
-            logger.debug(f"Dictation mode: no exact match found, typing as text")
+            logger.debug(f"Dictation mode: no context or exact match found, typing as text")
             return None
         
         # LAYER 3: Try context-aware parser (handles keywords + app/mode context)
