@@ -16,6 +16,7 @@ from dg_models.client import DeepgramClient
 from commands.config import CommandConfig
 from commands.parser import CommandParser
 from commands.executor import CommandExecutor
+from app_state import AppState
 
 # File watcher for hot reload
 try:
@@ -56,14 +57,14 @@ class VoiceCommandApp:
     def __init__(self):
         self.config_path = get_config_path()
         self.config = CommandConfig(self.config_path)
+        self.app_state = AppState()  # Track app/mode state
         self.parser = CommandParser(self.config)
-        self.executor = CommandExecutor(self.config)
+        self.executor = CommandExecutor(self.config, self.app_state)
         self.recorder = None
         self.deepgram = None
         self.is_running = False
         self.last_transcript = None
         self.pending_command = None
-        self.mode = "normal"  # "normal" or "dictation"
         self.file_observer = None  # File watcher for hot reload
         self.config_reload_pending = False  # Flag for pending config reload
 
@@ -220,8 +221,8 @@ class VoiceCommandApp:
         # Try to match command FIRST (always check commands, even in dictation mode)
         if result.is_final:
             # Final result - try command matching first
-            logger.info(f"🔍 Parsing: '{result.transcript}' (mode: {self.mode})")
-            match = self.parser.parse(result.transcript, mode=self.mode)
+            logger.info(f"🔍 Parsing: '{result.transcript}' (mode: {self.app_state.mode})")
+            match = self.parser.parse(result.transcript, mode=self.app_state.mode)
 
             if match:
                 # Command matched - execute it
@@ -232,15 +233,11 @@ class VoiceCommandApp:
 
                 if success:
                     logger.info(f"✓ {command.feedback}")
-                    
-                    # Check if mode changed
-                    if command.action.lower() == "mode":
-                        self.mode = getattr(command, 'mode', 'normal')
                 else:
                     logger.error(f"✗ Failed to execute {command.id}")
             else:
                 # No command matched - check if in dictation mode
-                if self.mode == "dictation":
+                if self.app_state.is_mode("dictation"):
                     logger.info(f"📝 Dictating: '{result.transcript}'")
                     self.executor.macos.type_text(result.transcript + " ")
                 else:

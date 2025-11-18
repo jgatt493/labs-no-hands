@@ -26,6 +26,7 @@ class CommandAction(BaseModel):
     primary_trigger: Optional[str] = None  # For context commands (e.g., "open", "start", "stop")
     apps: Optional[Dict[str, Any]] = None  # For context command app mappings (open context)
     modes: Optional[Dict[str, Any]] = None  # For context command mode mappings (start/stop context)
+    state_update: Optional[str] = None  # For context commands: "set_app:{appname}" or "set_mode:{modename}"
 
 
 class AppConfig(BaseModel):

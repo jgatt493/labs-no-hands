@@ -9,41 +9,71 @@ from automation.macos_control import MacOSControl
 class CommandExecutor:
     """Execute commands via macOS automation"""
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, app_state=None):
         self.macos = MacOSControl()
         self.last_executed = None
         self.config = config
+        self.app_state = app_state  # Reference to AppState for state management
 
     async def execute(self, command: CommandAction) -> bool:
-        """Execute a command"""
+        """Execute a command and update state if needed"""
         try:
             action = command.action.lower()
 
             if action == "click":
-                return await self._execute_click(command)
+                success = await self._execute_click(command)
             elif action == "keystroke":
-                return await self._execute_keystroke(command)
+                success = await self._execute_keystroke(command)
             elif action == "launch":
-                return await self._execute_launch(command)
+                success = await self._execute_launch(command)
             elif action == "focus":
-                return await self._execute_focus(command)
+                success = await self._execute_focus(command)
             elif action == "type":
-                return await self._execute_type(command)
+                success = await self._execute_type(command)
             elif action == "mode":
-                return await self._execute_mode(command)
+                success = await self._execute_mode(command)
             elif action == "move_cursor":
-                return await self._execute_move_cursor(command)
+                success = await self._execute_move_cursor(command)
             elif action == "shell":
-                return await self._execute_shell(command)
+                success = await self._execute_shell(command)
             elif action == "help":
-                return await self._execute_help(command)
+                success = await self._execute_help(command)
             else:
                 logger.error(f"Unknown action: {action}")
                 return False
 
+            # Update app state if the command specifies a state update
+            if success and command.state_update and self.app_state:
+                self._apply_state_update(command.state_update)
+
+            return success
+
         except Exception as e:
             logger.error(f"Error executing command '{command.id}': {e}")
             return False
+
+    def _apply_state_update(self, state_update: str) -> None:
+        """Apply a state update from a command (e.g., 'set_app:Cursor' or 'clear_app')"""
+        if not self.app_state:
+            return
+
+        try:
+            parts = state_update.split(":", 1)
+            action_type = parts[0]
+            value = parts[1] if len(parts) > 1 else None
+
+            if action_type == "set_app":
+                if value:
+                    self.app_state.set_app(value)
+            elif action_type == "set_mode":
+                if value:
+                    self.app_state.set_mode(value)
+            elif action_type == "clear_app":
+                self.app_state.clear_app()
+            else:
+                logger.warning(f"Unknown state update: {state_update}")
+        except Exception as e:
+            logger.error(f"Error applying state update '{state_update}': {e}")
 
     async def _execute_click(self, command: CommandAction) -> bool:
         """Execute click action - supports app-context coordinates or current cursor position"""

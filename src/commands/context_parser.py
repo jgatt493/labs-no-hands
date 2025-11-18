@@ -128,20 +128,26 @@ class ContextAwareParser:
         # Create a synthetic command to return
         # Determine what fields to set based on context type
         if context_type == "app":
+            # For app contexts, track which app and include state update
+            app_name = item_config["app"]
             cmd = CommandAction(
                 id=f"context_{primary}_{alias}",
                 triggers=[transcript],
                 action=item_config["action"],
-                app=item_config["app"],
+                app=app_name,
                 feedback=item_config["feedback"],
+                state_update=f"set_app:{app_name}",  # Update app state
             )
         elif context_type == "mode":
+            # For mode contexts, track which mode and include state update
+            mode_name = item_config["mode"]
             cmd = CommandAction(
                 id=f"context_{primary}_{alias}",
                 triggers=[transcript],
                 action=item_config["action"],
-                mode=item_config["mode"],
+                mode=mode_name,
                 feedback=item_config["feedback"],
+                state_update=f"set_mode:{mode_name}",  # Update mode state
             )
         else:
             return None
