@@ -20,7 +20,7 @@ parser = CommandParser(config)
 
 # Test cases
 test_cases = [
-    # Valid context matches
+    # OPEN context - Valid matches
     ("open chrome", "Should launch Chrome"),
     ("open browser", "Should launch Chrome (alias)"),
     ("open ide", "Should launch Cursor (alias)"),
@@ -28,10 +28,25 @@ test_cases = [
     ("open slack", "Should launch Slack"),
     ("open terminal", "Should launch Terminal"),
     
-    # Invalid context matches (should return None)
+    # OPEN context - Invalid matches (should return None)
     ("open toggle focus", "Should IGNORE (toggle focus not valid alias)"),
     ("open click", "Should IGNORE (click not valid app alias)"),
     ("open", "Should IGNORE (no alias provided)"),
+    
+    # START context - Valid matches
+    ("start dictation", "Should enter dictation mode"),
+    ("start dictate", "Should enter dictation mode (alias)"),
+    ("start manual", "Should enter manual mode"),
+    ("start manual mode", "Should enter manual mode (alias)"),
+    
+    # STOP context - Valid matches
+    ("stop dictation", "Should exit dictation mode"),
+    ("stop dictate", "Should exit dictation mode (alias)"),
+    ("stop manual", "Should exit manual mode"),
+    ("stop manual mode", "Should exit manual mode (alias)"),
+    
+    # STOP context - Invalid matches
+    ("stop something", "Should IGNORE (something not valid mode)"),
     
     # Other commands (should use normal matching)
     ("click", "Should click at current position"),

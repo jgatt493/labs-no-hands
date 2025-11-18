@@ -67,6 +67,42 @@ commands:
         app: "Spotify"
         feedback: "Opening Spotify"
 
+  # CONTEXT-AWARE: Start modes
+  # Usage: "start dictation", "start manual"
+  - id: "context_start_mode"
+    action: "context_mode"
+    primary_trigger: "start"
+    modes:
+      dictation:
+        triggers: ["dictation", "dictate"]
+        action: mode
+        mode: "dictation"
+        feedback: "Starting dictation mode"
+      
+      manual:
+        triggers: ["manual", "manual mode"]
+        action: mode
+        mode: "manual"
+        feedback: "Starting manual mode"
+
+  # CONTEXT-AWARE: Stop modes
+  # Usage: "stop dictation", "stop manual"
+  - id: "context_stop_mode"
+    action: "context_mode"
+    primary_trigger: "stop"
+    modes:
+      dictation:
+        triggers: ["dictation", "dictate"]
+        action: mode
+        mode: "normal"
+        feedback: "Stopping dictation mode"
+      
+      manual:
+        triggers: ["manual", "manual mode"]
+        action: mode
+        mode: "normal"
+        feedback: "Stopping manual mode"
+
   # Smart chat focus - context-aware for different apps
   - id: "focus_chat"
     triggers:
