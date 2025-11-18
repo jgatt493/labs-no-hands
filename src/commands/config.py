@@ -9,7 +9,7 @@ class CommandAction(BaseModel):
     """Defines a command and its actions"""
 
     id: str
-    triggers: List[str]
+    triggers: List[str] = []  # Empty by default for context commands
     action: str
     feedback: Optional[str] = None
     # Action-specific fields
@@ -23,6 +23,8 @@ class CommandAction(BaseModel):
     direction: Optional[str] = None  # For move_cursor actions
     distance: Optional[int] = None  # For move_cursor actions
     shell: Optional[str] = None  # For shell/command actions
+    primary_trigger: Optional[str] = None  # For context commands (e.g., "open")
+    apps: Optional[Dict[str, Any]] = None  # For context command app mappings
 
 
 class AppConfig(BaseModel):

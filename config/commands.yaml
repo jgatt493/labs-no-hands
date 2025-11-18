@@ -30,6 +30,43 @@ commands:
     coordinates: [0, 0]  # Uses current cursor position
     feedback: "Clicked"
 
+  # CONTEXT-AWARE: Open applications
+  # Usage: "open chrome", "open ide", "open music", etc.
+  # Invalid: "open toggle focus" (toggle focus not a valid app alias)
+  - id: "context_open_app"
+    action: "context_open"
+    primary_trigger: "open"
+    apps:
+      cursor:
+        triggers: ["cursor", "ide", "code"]
+        action: launch
+        app: "Cursor"
+        feedback: "Opening Cursor"
+      
+      chrome:
+        triggers: ["chrome", "browser", "google"]
+        action: launch
+        app: "Google Chrome"
+        feedback: "Opening Chrome"
+      
+      slack:
+        triggers: ["slack"]
+        action: launch
+        app: "Slack"
+        feedback: "Opening Slack"
+      
+      terminal:
+        triggers: ["terminal", "shell"]
+        action: launch
+        app: "Terminal"
+        feedback: "Opening Terminal"
+      
+      spotify:
+        triggers: ["spotify", "music"]
+        action: launch
+        app: "Spotify"
+        feedback: "Opening Spotify"
+
   # Smart chat focus - context-aware for different apps
   - id: "focus_chat"
     triggers:
