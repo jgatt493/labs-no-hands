@@ -15,7 +15,7 @@ class CommandAction(BaseModel):
     # Action-specific fields
     coordinates: Optional[List[int]] = None  # For click actions (default)
     app_coordinates: Optional[Dict[str, List[int]]] = None  # For context-aware click actions
-    keys: Optional[List[str]] = None  # For keystroke actions
+    keys: Optional[Any] = None  # For keystroke actions - can be List[str] or Dict for context_press
     app: Optional[str] = None  # For launch/focus actions
     text: Optional[str] = None  # For type actions
     button: Optional[str] = None  # For click actions

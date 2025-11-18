@@ -96,6 +96,50 @@ class ContextAwareParser:
                     "type": "app",
                     "items": items,
                 }
+            
+            elif action == "context_press":
+                # Key press context (e.g., "press escape", "press space")
+                context_key = cmd.primary_trigger
+                
+                # Build key map for this context
+                items = {}
+                if cmd.keys:
+                    for key_name, key_config in cmd.keys.items():
+                        # Store each trigger as a key pointing to the key
+                        for trigger in key_config.get("triggers", []):
+                            items[trigger.lower()] = {
+                                "name": key_name,
+                                "key": key_config.get("key"),
+                                "feedback": key_config.get("feedback"),
+                            }
+                
+                self.context_map[context_key] = {
+                    "cmd": cmd,
+                    "type": "key",
+                    "items": items,
+                }
+            
+            elif action in ("context_minimize", "context_maximize"):
+                # App minimize/maximize context (e.g., "minimize cursor", "maximize chrome")
+                context_key = cmd.primary_trigger
+                
+                # Build app map for this context
+                items = {}
+                if cmd.apps:
+                    for app_name, app_config in cmd.apps.items():
+                        # Store each trigger as a key pointing to the app
+                        for trigger in app_config.get("triggers", []):
+                            items[trigger.lower()] = {
+                                "name": app_name,
+                                "app": app_config.get("app"),
+                                "feedback": app_config.get("feedback"),
+                            }
+                
+                self.context_map[context_key] = {
+                    "cmd": cmd,
+                    "type": action,  # "context_minimize" or "context_maximize"
+                    "items": items,
+                }
 
         logger.debug(f"Built context map with {len(self.context_map)} contexts")
 
@@ -177,6 +221,38 @@ class ContextAwareParser:
                 mode=mode_name,
                 feedback=item_config["feedback"],
                 state_update=f"set_mode:{mode_name}",  # Update mode state
+            )
+        elif context_type == "key":
+            # For key contexts, execute keystroke
+            key = item_config["key"]
+            cmd = CommandAction(
+                id=f"context_{primary}_{alias}",
+                triggers=[transcript],
+                action="keystroke",
+                keys=[key],
+                feedback=item_config["feedback"],
+            )
+        elif context_type == "context_minimize":
+            # For minimize context, minimize app and clear app state
+            app_name = item_config["app"]
+            cmd = CommandAction(
+                id=f"context_{primary}_{alias}",
+                triggers=[transcript],
+                action="minimize",
+                app=app_name,
+                feedback=item_config["feedback"],
+                state_update="clear_app",  # Clear opened app state after minimize
+            )
+        elif context_type == "context_maximize":
+            # For maximize context, maximize app and keep app state
+            app_name = item_config["app"]
+            cmd = CommandAction(
+                id=f"context_{primary}_{alias}",
+                triggers=[transcript],
+                action="maximize",
+                app=app_name,
+                feedback=item_config["feedback"],
+                state_update=f"set_app:{app_name}",  # Keep app as selected
             )
         else:
             return None

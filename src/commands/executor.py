@@ -38,6 +38,10 @@ class CommandExecutor:
                 success = await self._execute_shell(command)
             elif action == "help":
                 success = await self._execute_help(command)
+            elif action == "minimize":
+                success = await self._execute_minimize(command)
+            elif action == "maximize":
+                success = await self._execute_maximize(command)
             else:
                 logger.error(f"Unknown action: {action}")
                 return False
@@ -290,4 +294,76 @@ class CommandExecutor:
 
         self.last_executed = command.id
         return True
+
+    async def _execute_minimize(self, command: CommandAction) -> bool:
+        """Minimize the specified application"""
+        if not command.app:
+            logger.error("Minimize command requires an app name")
+            return False
+        
+        try:
+            # Use AppleScript to minimize the app
+            script = f"""
+            tell application "{command.app}"
+                set miniaturized of every window to true
+            end tell
+            """
+            process = await asyncio.create_subprocess_shell(
+                f"osascript -e '{script}'",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await process.communicate()
+            
+            if process.returncode == 0:
+                logger.info(f"Minimized: {command.app}")
+                if command.feedback:
+                    logger.info(f"Feedback: {command.feedback}")
+                self.last_executed = command.id
+                return True
+            else:
+                logger.error(f"Failed to minimize {command.app}")
+                if stderr:
+                    logger.error(f"Error: {stderr.decode()}")
+                return False
+        
+        except Exception as e:
+            logger.error(f"Error minimizing app: {e}")
+            return False
+
+    async def _execute_maximize(self, command: CommandAction) -> bool:
+        """Maximize the specified application"""
+        if not command.app:
+            logger.error("Maximize command requires an app name")
+            return False
+        
+        try:
+            # Use AppleScript to maximize the app
+            script = f"""
+            tell application "{command.app}"
+                set miniaturized of every window to false
+            end tell
+            """
+            process = await asyncio.create_subprocess_shell(
+                f"osascript -e '{script}'",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await process.communicate()
+            
+            if process.returncode == 0:
+                logger.info(f"Maximized: {command.app}")
+                if command.feedback:
+                    logger.info(f"Feedback: {command.feedback}")
+                self.last_executed = command.id
+                return True
+            else:
+                logger.error(f"Failed to maximize {command.app}")
+                if stderr:
+                    logger.error(f"Error: {stderr.decode()}")
+                return False
+        
+        except Exception as e:
+            logger.error(f"Error maximizing app: {e}")
+            return False
 
