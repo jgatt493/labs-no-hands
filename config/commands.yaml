@@ -177,17 +177,6 @@ commands:
     app: "Terminal"
     feedback: "Opening terminal"
 
-  # Toggle terminal
-  - id: "toggle_terminal"
-    triggers:
-      - "toggle terminal"
-      - "show terminal"
-      - "hide terminal"
-      - "terminal toggle"
-    action: keystroke
-    keys: ["cmd", "j"]
-    feedback: "Toggling terminal"
-
   # Browser
   - id: "open_chrome"
     triggers:
@@ -327,35 +316,6 @@ commands:
     action: keystroke
     keys: ["cmd", "r"]
     feedback: "Refreshing"
-
-  # Cursor AI commands
-  - id: "cursor_chat"
-    triggers:
-      - "chat"
-      - "cursor chat"
-      - "ask cursor"
-      - "open chat"
-    action: keystroke
-    keys: ["cmd", "k"]
-    feedback: "Opening Cursor chat"
-
-  - id: "cursor_edit"
-    triggers:
-      - "edit"
-      - "cursor edit"
-      - "inline edit"
-    action: keystroke
-    keys: ["cmd", "i"]
-    feedback: "Opening cursor edit"
-
-  - id: "cursor_composer"
-    triggers:
-      - "composer"
-      - "multi edit"
-      - "open composer"
-    action: keystroke
-    keys: ["cmd", "shift", "l"]
-    feedback: "Opening Cursor composer"
 
   # Window resizing (using macOS Mission Control + arrow keys)
   - id: "maximize_window"
