@@ -42,6 +42,8 @@ class CommandExecutor:
                 success = await self._execute_minimize(command)
             elif action == "maximize":
                 success = await self._execute_maximize(command)
+            elif action == "close":
+                success = await self._execute_close(command)
             else:
                 logger.error(f"Unknown action: {action}")
                 return False
@@ -365,5 +367,47 @@ class CommandExecutor:
         
         except Exception as e:
             logger.error(f"Error maximizing app: {e}")
+            return False
+
+    async def _execute_close(self, command: CommandAction) -> bool:
+        """Close the specified application using cmd+q"""
+        if not command.app:
+            logger.error("Close command requires an app name")
+            return False
+        
+        try:
+            # Focus the app first, then send cmd+q to close it
+            script = f"""
+            tell application "{command.app}"
+                activate
+                tell application "System Events"
+                    keystroke "q" using command down
+                end tell
+            end tell
+            """
+            process = await asyncio.create_subprocess_shell(
+                f"osascript -e '{script}'",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await process.communicate()
+            
+            if process.returncode == 0:
+                logger.info(f"Closed: {command.app}")
+                if command.feedback:
+                    logger.info(f"Feedback: {command.feedback}")
+                # Clear app state after closing
+                if self.app_state:
+                    self.app_state.clear_app()
+                self.last_executed = command.id
+                return True
+            else:
+                logger.error(f"Failed to close {command.app}")
+                if stderr:
+                    logger.error(f"Error: {stderr.decode()}")
+                return False
+        
+        except Exception as e:
+            logger.error(f"Error closing app: {e}")
             return False
 
