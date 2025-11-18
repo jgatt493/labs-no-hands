@@ -108,7 +108,106 @@ class MacOSControl:
 
     def __init__(self):
         self.modifier_keys = {"cmd": 0x100000, "ctrl": 0x40000, "shift": 0x20000, "alt": 0x80000}
+        self.screen_config = self._detect_screen_configuration()
 
+    def _detect_screen_configuration(self) -> dict:
+        """Detect screen configuration (laptop screen only vs external monitors)"""
+        try:
+            import subprocess
+            import json
+            
+            # Use system_profiler to get display info
+            result = subprocess.run(
+                ['system_profiler', 'SPDisplaysDataType', '-json'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            
+            if result.returncode != 0:
+                raise Exception("Failed to get display info")
+            
+            data = json.loads(result.stdout)
+            displays = data.get('SPDisplaysDataType', [])
+            
+            config = {
+                "num_displays": len(displays),
+                "is_laptop_only": len(displays) == 1,
+                "displays": []
+            }
+            
+            for i, display in enumerate(displays):
+                # Extract display info
+                display_name = display.get('sppci_model', f'Display {i+1}')
+                
+                # Try to get resolution
+                resolutions = display.get('spdisplays_resolutions', [])
+                if resolutions:
+                    res_str = resolutions[0]
+                    try:
+                        width, height = map(int, res_str.replace('x', ' ').split()[:2])
+                    except:
+                        width, height = 1440, 900
+                else:
+                    width, height = 1440, 900
+                
+                is_main = i == 0  # First display is typically main
+                
+                display_info = {
+                    "id": i,
+                    "name": display_name,
+                    "is_main": is_main,
+                    "width": width,
+                    "height": height,
+                    "origin_x": 0 if i == 0 else width,  # Simplified
+                    "origin_y": 0,
+                }
+                
+                config["displays"].append(display_info)
+            
+            logger.info(f"Screen config: {len(displays)} display(s) - Laptop only: {config['is_laptop_only']}")
+            return config
+            
+        except Exception as e:
+            logger.warning(f"Error detecting screens: {e}")
+            # Fallback: assume laptop screen only
+            return {
+                "num_displays": 1,
+                "is_laptop_only": True,
+                "displays": [{
+                    "id": 0,
+                    "name": "Laptop",
+                    "is_main": True,
+                    "width": 1440,
+                    "height": 900,
+                    "origin_x": 0,
+                    "origin_y": 0,
+                }]
+            }
+    
+    def is_laptop_only(self) -> bool:
+        """Check if only laptop screen is connected"""
+        return self.screen_config["is_laptop_only"]
+    
+    def get_screen_configuration(self) -> dict:
+        """Get current screen configuration"""
+        return self.screen_config
+    
+    def get_display_for_coordinates(self, x: int, y: int) -> dict:
+        """Find which display contains the given coordinates"""
+        for display in self.screen_config["displays"]:
+            origin_x = display["origin_x"]
+            origin_y = display["origin_y"]
+            width = display["width"]
+            height = display["height"]
+            
+            if (origin_x <= x < origin_x + width and 
+                origin_y <= y < origin_y + height):
+                return display
+        
+        # Default to first display
+        return self.screen_config["displays"][0]
+    
     def get_active_app(self) -> str:
         """Get the name of the currently active application"""
         try:
