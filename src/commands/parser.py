@@ -154,13 +154,19 @@ class CommandParser:
             except Exception as e:
                 logger.debug(f"App semantic matching error: {e}")
         
-        # Check semantic match threshold
+        # Check semantic match threshold - MUST meet threshold to proceed
         if best_match and best_score >= self.config.app_config.match_threshold:
             cmd, score = best_match
+            logger.debug(f"Semantic match passed threshold: {cmd.id} ({best_score:.2f} >= {self.config.app_config.match_threshold})")
             logger.info(f"✅ Matched: {cmd.id} (app-specific, semantic score: {score:.2f})")
             return cmd, score
+        elif best_match:
+            logger.debug(f"Semantic match below threshold: {best_match[0].id} ({best_score:.2f} < {self.config.app_config.match_threshold}), falling back to fuzzy")
         
-        # Fuzzy matching fallback for app commands
+        # Fuzzy matching fallback for app commands - reset scores for clean comparison
+        best_match = None
+        best_score = 0.0
+        
         for cmd in self.current_app_config.commands:
             for trigger in cmd.triggers:
                 score = fuzz.token_set_ratio(transcript_clean, trigger.lower()) / 100.0
