@@ -119,8 +119,8 @@ class ContextAwareParser:
                     "items": items,
                 }
             
-            elif action in ("context_minimize", "context_maximize"):
-                # App minimize/maximize context (e.g., "minimize cursor", "maximize chrome")
+            elif action in ("context_minimize", "context_maximize", "context_toggle"):
+                # App minimize/maximize/toggle context (e.g., "minimize cursor", "maximize chrome", "toggle terminal")
                 context_key = cmd.primary_trigger
                 
                 # Build app map for this context
@@ -133,11 +133,12 @@ class ContextAwareParser:
                                 "name": app_name,
                                 "app": app_config.get("app"),
                                 "feedback": app_config.get("feedback"),
+                                "keys": app_config.get("keys"),  # For toggle context
                             }
                 
                 self.context_map[context_key] = {
                     "cmd": cmd,
-                    "type": action,  # "context_minimize" or "context_maximize"
+                    "type": action,  # "context_minimize", "context_maximize", or "context_toggle"
                     "items": items,
                 }
 
@@ -253,6 +254,16 @@ class ContextAwareParser:
                 app=app_name,
                 feedback=item_config["feedback"],
                 state_update=f"set_app:{app_name}",  # Keep app as selected
+            )
+        elif context_type == "context_toggle":
+            # For toggle context, execute app-specific toggle (terminal, chat, project)
+            # Item config has "keys" field with keystroke to send
+            cmd = CommandAction(
+                id=f"context_{primary}_{alias}",
+                triggers=[transcript],
+                action="keystroke",
+                keys=item_config.get("keys", []),
+                feedback=item_config["feedback"],
             )
         else:
             return None
