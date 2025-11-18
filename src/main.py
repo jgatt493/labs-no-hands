@@ -108,7 +108,7 @@ class VoiceCommandApp:
             logger.info("Reloading configuration...")
             self.config.reload()
             self.parser = CommandParser(self.config)
-            self.executor = CommandExecutor(self.config)
+            self.executor = CommandExecutor(self.config, self.app_state)
             logger.info("✅ Configuration reloaded successfully")
         except Exception as e:
             logger.error(f"❌ Error reloading configuration: {e}")
