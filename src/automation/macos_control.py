@@ -107,7 +107,15 @@ class MacOSControl:
     }
 
     def __init__(self):
-        self.modifier_keys = {"cmd": 0x100000, "ctrl": 0x40000, "shift": 0x20000, "alt": 0x80000}
+        self.modifier_keys = {
+            "cmd": 0x100000,
+            "command": 0x100000,
+            "ctrl": 0x40000,
+            "control": 0x40000,
+            "shift": 0x20000,
+            "alt": 0x80000,
+            "option": 0x80000,  # macOS option key
+        }
         self.screen_config = self._detect_screen_configuration()
 
     def _detect_screen_configuration(self) -> dict:
