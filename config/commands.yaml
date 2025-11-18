@@ -682,6 +682,11 @@ commands:
         key: "return"
         feedback: "Pressed enter"
       
+      delete:
+        triggers: ["delete", "del"]
+        key: "delete"
+        feedback: "Pressed delete"
+      
       escape:
         triggers: ["escape", "esc"]
         key: "escape"
