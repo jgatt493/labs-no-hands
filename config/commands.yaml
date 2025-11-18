@@ -103,27 +103,6 @@ commands:
         mode: "normal"
         feedback: "Stopping manual mode"
 
-  # CONTEXT-AWARE: Toggle panels (app-specific, primarily Cursor)
-  # Usage: "toggle terminal", "toggle chat", "toggle project"
-  - id: "context_toggle"
-    action: "context_toggle"
-    primary_trigger: "toggle"
-    apps:
-      terminal:
-        triggers: ["terminal"]
-        keys: ["cmd", "j"]
-        feedback: "Toggling terminal"
-      
-      chat:
-        triggers: ["chat"]
-        keys: ["cmd", "option", "b"]
-        feedback: "Toggling chat"
-      
-      project:
-        triggers: ["project", "projects"]
-        keys: ["cmd", "shift", "e"]
-        feedback: "Toggling project panel"
-
   # CONTEXT-AWARE: Close applications
   # Usage: "close cursor", "close chrome", "close app"
   - id: "context_close_app"
