@@ -73,6 +73,29 @@ class ContextAwareParser:
                     "type": "mode",
                     "items": items,
                 }
+            
+            elif action == "context_close":
+                # App close context (e.g., "close cursor")
+                context_key = cmd.primary_trigger
+                
+                # Build app map for this context
+                items = {}
+                if cmd.apps:
+                    for app_name, app_config in cmd.apps.items():
+                        # Store each trigger as a key pointing to the app
+                        for trigger in app_config.get("triggers", []):
+                            items[trigger.lower()] = {
+                                "name": app_name,
+                                "app": app_config.get("app"),
+                                "action": app_config.get("action"),
+                                "feedback": app_config.get("feedback"),
+                            }
+                
+                self.context_map[context_key] = {
+                    "cmd": cmd,
+                    "type": "app",
+                    "items": items,
+                }
 
         logger.debug(f"Built context map with {len(self.context_map)} contexts")
 

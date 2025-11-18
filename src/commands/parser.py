@@ -19,7 +19,6 @@ class CommandParser:
 
     def __init__(self, config: CommandConfig):
         self.config = config
-        self.triggers_map = config.get_all_triggers()
         
         # Initialize context-aware parser
         self.context_parser = ContextAwareParser(config)
@@ -27,27 +26,6 @@ class CommandParser:
         # Initialize semantic model if available
         self.semantic_model = None
         self.trigger_embeddings = {}  # Cache embeddings
-        
-        # Mode-specific command mappings for strict matching
-        self.mode_commands = {
-            "dictation": {
-                "enter": ["send"],
-                "return": ["send"],
-                "stop dictation": ["stop_dictation"],
-                "end dictation": ["stop_dictation"],
-                "done": ["stop_dictation"],
-            },
-            "manual": {
-                "left": ["move_left"],
-                "right": ["move_right"],
-                "up": ["move_up"],
-                "down": ["move_down"],
-                "click": ["click_manual"],
-                "stop manual mode": ["stop_manual_mode"],
-                "exit manual mode": ["stop_manual_mode"],
-                "done": ["stop_manual_mode"],
-            },
-        }
         
         if SEMANTIC_AVAILABLE:
             try:
@@ -90,57 +68,22 @@ class CommandParser:
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
     
-    def _get_command_by_id(self, command_id: str) -> Optional[CommandAction]:
-        """Get a command by its ID"""
-        for cmd in self.config.commands:
-            if cmd.id == command_id:
-                return cmd
-        return None
-    
-    def _try_mode_match(self, transcript_clean: str, mode: str) -> Optional[Tuple[CommandAction, float]]:
-        """Try to match using mode-specific strict matching"""
-        if mode not in self.mode_commands:
-            return None
-        
-        mode_map = self.mode_commands[mode]
-        
-        # Check if transcript matches any allowed command in this mode
-        if transcript_clean in mode_map:
-            command_ids = mode_map[transcript_clean]
-            cmd = self._get_command_by_id(command_ids[0])
-            if cmd:
-                logger.info(f"✅ Matched: {cmd.id} (exact match in {mode} mode)")
-                return cmd, 1.0
-        
-        return None
 
     def parse(self, transcript: str, mode: str = "normal") -> Optional[Tuple[CommandAction, float]]:
         """
-        Parse transcript and find matching command.
-        Returns (CommandAction, confidence_score) or None if no match.
+        Parse transcript using 4-path execution model:
+        1. Context-aware parsing (keywords: open/start/stop/close)
+        2. Semantic similarity matching
+        3. Fuzzy matching fallback
         
-        Parsing order:
-        1. Mode-specific strict matching (dictation, manual)
-        2. Context-aware matching (open X, focus X, etc)
-        3. Semantic similarity matching
-        4. Fuzzy matching fallback
+        Mode filtering happens via context commands and command definitions.
         """
         if not transcript or not transcript.strip():
             return None
 
         transcript_clean = self._normalize_text(transcript)
         
-        # Try mode-specific strict matching first
-        mode_result = self._try_mode_match(transcript_clean, mode)
-        if mode_result is not None:
-            return mode_result
-        
-        # If in special mode and no match, ignore everything else
-        if mode in self.mode_commands:
-            logger.debug(f"{mode} mode: ignoring '{transcript}' (not in allowed commands)")
-            return None
-        
-        # Normal mode: Try context-aware parser
+        # PATH 1: Try context-aware parser (handles keywords + mode filtering)
         logger.debug(f"Trying context-aware parser for: '{transcript}'")
         context_result = self.context_parser.parse_context(transcript, mode)
         if context_result:

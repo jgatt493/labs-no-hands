@@ -103,6 +103,42 @@ commands:
         mode: "normal"
         feedback: "Stopping manual mode"
 
+  # CONTEXT-AWARE: Close applications
+  # Usage: "close cursor", "close chrome", "close app"
+  - id: "context_close_app"
+    action: "context_close"
+    primary_trigger: "close"
+    apps:
+      cursor:
+        triggers: ["cursor", "ide", "code"]
+        action: "close"
+        app: "Cursor"
+        feedback: "Closing Cursor"
+      
+      chrome:
+        triggers: ["chrome", "browser"]
+        action: "close"
+        app: "Google Chrome"
+        feedback: "Closing Chrome"
+      
+      slack:
+        triggers: ["slack"]
+        action: "close"
+        app: "Slack"
+        feedback: "Closing Slack"
+      
+      terminal:
+        triggers: ["terminal", "shell"]
+        action: "close"
+        app: "Terminal"
+        feedback: "Closing Terminal"
+      
+      spotify:
+        triggers: ["spotify", "music"]
+        action: "close"
+        app: "Spotify"
+        feedback: "Closing Spotify"
+
   # Smart chat focus - context-aware for different apps
   - id: "focus_chat"
     triggers:
@@ -292,26 +328,6 @@ commands:
     keys: ["cmd", "r"]
     feedback: "Refreshing"
 
-  # Dictation mode
-  - id: "start_dictation"
-    triggers:
-      - "dictate"
-      - "start dictation"
-      - "dictation mode"
-    action: mode
-    mode: "dictation"
-    feedback: "Dictation mode started"
-
-  # Stop dictation
-  - id: "stop_dictation"
-    triggers:
-      - "stop dictation"
-      - "end dictation"
-      - "done"
-    action: mode
-    mode: "normal"
-    feedback: "Dictation mode stopped"
-
   # Cursor AI commands
   - id: "cursor_chat"
     triggers:
@@ -340,16 +356,6 @@ commands:
     action: keystroke
     keys: ["cmd", "shift", "l"]
     feedback: "Opening Cursor composer"
-
-  # Launch Cursor
-  - id: "open_cursor"
-    triggers:
-      - "open cursor"
-      - "launch cursor"
-      - "cursor"
-    action: launch
-    app: "Cursor"
-    feedback: "Opening Cursor"
 
   # Window resizing (using macOS Mission Control + arrow keys)
   - id: "maximize_window"
@@ -635,26 +641,6 @@ commands:
     action: keystroke
     keys: ["cmd", "q"]
     feedback: "Closing application"
-
-  # Manual mode
-  - id: "start_manual_mode"
-    triggers:
-      - "manual mode"
-      - "start manual mode"
-      - "enter manual mode"
-    action: mode
-    mode: "manual"
-    feedback: "Manual mode started - use left, right, up, down, click"
-
-  # Stop manual mode
-  - id: "stop_manual_mode"
-    triggers:
-      - "stop manual mode"
-      - "exit manual mode"
-      - "done"
-    action: mode
-    mode: "normal"
-    feedback: "Manual mode stopped"
 
   # Manual mode - Move cursor
   - id: "move_left"
