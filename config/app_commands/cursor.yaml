@@ -1,26 +1,7 @@
 # Cursor App - Specific Commands
 # These commands ONLY work when Cursor app is active
 # Loaded dynamically when app state = "Cursor"
-
-config:
-  # Deepgram settings (same as main config)
-  deepgram_model: "nova-3"
-  interim_results: true
-  punctuate: true
-  endpointing: true
-  
-  # Command matching
-  confidence_threshold: 0.75
-  match_threshold: 0.80
-  
-  # Audio settings
-  sample_rate: 16000
-  channels: 1
-  chunk_size: 4096
-  
-  # Feedback
-  enable_feedback: true
-  feedback_type: "visual"
+# Note: Uses config from main commands.yaml, no need to duplicate
 
 commands:
   # Chat panel toggle
