@@ -20,6 +20,9 @@ class CommandAction(BaseModel):
     text: Optional[str] = None  # For type actions
     button: Optional[str] = None  # For click actions
     mode: Optional[str] = None  # For mode actions
+    direction: Optional[str] = None  # For move_cursor actions
+    distance: Optional[int] = None  # For move_cursor actions
+    shell: Optional[str] = None  # For shell/command actions
 
 
 class AppConfig(BaseModel):

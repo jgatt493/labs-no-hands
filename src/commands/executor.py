@@ -31,6 +31,10 @@ class CommandExecutor:
                 return await self._execute_type(command)
             elif action == "mode":
                 return await self._execute_mode(command)
+            elif action == "move_cursor":
+                return await self._execute_move_cursor(command)
+            elif action == "shell":
+                return await self._execute_shell(command)
             elif action == "help":
                 return await self._execute_help(command)
             else:
@@ -42,7 +46,7 @@ class CommandExecutor:
             return False
 
     async def _execute_click(self, command: CommandAction) -> bool:
-        """Execute click action - supports app-context coordinates"""
+        """Execute click action - supports app-context coordinates or current cursor position"""
         # Determine which coordinates to use
         coords = None
         
@@ -58,11 +62,16 @@ class CommandExecutor:
         if not coords:
             coords = command.coordinates
         
-        if not coords or len(coords) < 2:
+        # Check if coordinates are [0, 0] which means use current cursor position (for manual mode)
+        if coords and len(coords) >= 2 and coords[0] == 0 and coords[1] == 0:
+            x, y = self.macos.get_mouse_position()
+            logger.info(f"Using current cursor position for click: ({x}, {y})")
+        elif not coords or len(coords) < 2:
             logger.error(f"Invalid coordinates for click: {coords}")
             return False
-
-        x, y = coords[0], coords[1]
+        else:
+            x, y = coords[0], coords[1]
+        
         button = command.button or "left"
 
         logger.info(f"Executing click at ({x}, {y}) with button {button}")
@@ -174,6 +183,58 @@ class CommandExecutor:
 
         self.last_executed = command.id
         return True
+
+    async def _execute_move_cursor(self, command: CommandAction) -> bool:
+        """Execute cursor movement action"""
+        direction = getattr(command, 'direction', None)
+        distance = getattr(command, 'distance', 15)
+
+        if not direction:
+            logger.error("No direction specified for move_cursor action")
+            return False
+
+        logger.info(f"Moving cursor {direction} by {distance}px")
+        self.macos.move_cursor(direction, distance)
+
+        if command.feedback:
+            logger.info(f"Feedback: {command.feedback}")
+
+        self.last_executed = command.id
+        return True
+
+    async def _execute_shell(self, command: CommandAction) -> bool:
+        """Execute shell command"""
+        if not command.shell:
+            logger.error("No shell command specified")
+            return False
+
+        cmd_str = command.shell
+        logger.info(f"Executing shell command: {cmd_str}")
+
+        try:
+            # Run shell command asynchronously
+            process = await asyncio.create_subprocess_shell(
+                cmd_str,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await process.communicate()
+
+            if process.returncode == 0:
+                logger.info(f"Shell command executed successfully")
+                if command.feedback:
+                    logger.info(f"Feedback: {command.feedback}")
+                self.last_executed = command.id
+                return True
+            else:
+                logger.error(f"Shell command failed with code {process.returncode}")
+                if stderr:
+                    logger.error(f"Error: {stderr.decode()}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error executing shell command: {e}")
+            return False
 
     async def _execute_help(self, command: CommandAction) -> bool:
         """Execute help action - display all available commands"""

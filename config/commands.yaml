@@ -19,6 +19,17 @@ config:
   feedback_type: "visual"  # visual, audio, or both
 
 commands:
+  # Click at current cursor position (generic) - MUST BE BEFORE focus_chat
+  - id: "click_current"
+    triggers:
+      - "click"
+      - "click here"
+      - "left click"
+      - "click now"
+    action: click
+    coordinates: [0, 0]  # Uses current cursor position
+    feedback: "Clicked"
+
   # Smart chat focus - context-aware for different apps
   - id: "focus_chat"
     triggers:
@@ -56,6 +67,17 @@ commands:
     action: launch
     app: "Terminal"
     feedback: "Opening terminal"
+
+  # Toggle terminal
+  - id: "toggle_terminal"
+    triggers:
+      - "toggle terminal"
+      - "show terminal"
+      - "hide terminal"
+      - "terminal toggle"
+    action: keystroke
+    keys: ["cmd", "j"]
+    feedback: "Toggling terminal"
 
   # Browser
   - id: "open_chrome"
@@ -417,6 +439,39 @@ commands:
     keys: ["cmd", "End"]
     feedback: "Scrolling to bottom"
 
+  # Arrow key controls
+  - id: "arrow_up"
+    triggers:
+      - "arrow up"
+      - "up arrow"
+    action: keystroke
+    keys: ["up"]
+    feedback: "Arrow up"
+
+  - id: "arrow_down"
+    triggers:
+      - "arrow down"
+      - "down arrow"
+    action: keystroke
+    keys: ["down"]
+    feedback: "Arrow down"
+
+  - id: "arrow_left"
+    triggers:
+      - "arrow left"
+      - "left arrow"
+    action: keystroke
+    keys: ["left"]
+    feedback: "Arrow left"
+
+  - id: "arrow_right"
+    triggers:
+      - "arrow right"
+      - "right arrow"
+    action: keystroke
+    keys: ["right"]
+    feedback: "Arrow right"
+
   # Spotify controls
   - id: "toggle_spotify"
     triggers:
@@ -446,4 +501,126 @@ commands:
     action: keystroke
     keys: ["f7"]
     feedback: "Going to previous track"
+
+  # Clear all text
+  - id: "clear"
+    triggers:
+      - "clear"
+      - "delete all"
+      - "clear all"
+      - "select all"
+    action: keystroke
+    keys: ["cmd", "a"]
+    feedback: "Selecting all"
+
+  - id: "delete_selected"
+    triggers:
+      - "delete"
+      - "remove"
+    action: keystroke
+    keys: ["Delete"]
+    feedback: "Deleting"
+
+  # Accept changes (keep all button)
+  - id: "accept_changes"
+    triggers:
+      - "accept changes"
+      - "keep all"
+      - "accept"
+    action: keystroke
+    keys: ["cmd", "return"]
+    feedback: "Accepting changes"
+
+  # Kill process (Ctrl+C)
+  - id: "kill_process"
+    triggers:
+      - "kill process"
+      - "stop process"
+      - "interrupt"
+      - "kill"
+    action: keystroke
+    keys: ["ctrl", "c"]
+    feedback: "Sent Ctrl+C"
+
+  # Restart app (hands off)
+  - id: "restart_app"
+    triggers:
+      - "restart no hands"
+      - "restart"
+      - "restart app"
+    action: shell
+    shell: "nohup bash /Users/jeremygatt/Projects/voice-command-mac/restart.sh > /dev/null 2>&1 &"
+    feedback: "Restarting app"
+
+  # Close application
+  - id: "close_application"
+    triggers:
+      - "close application"
+      - "quit application"
+      - "close app"
+      - "quit app"
+    action: keystroke
+    keys: ["cmd", "q"]
+    feedback: "Closing application"
+
+  # Manual mode
+  - id: "start_manual_mode"
+    triggers:
+      - "manual mode"
+      - "start manual mode"
+      - "enter manual mode"
+    action: mode
+    mode: "manual"
+    feedback: "Manual mode started - use left, right, up, down, click"
+
+  # Stop manual mode
+  - id: "stop_manual_mode"
+    triggers:
+      - "stop manual mode"
+      - "exit manual mode"
+      - "done"
+    action: mode
+    mode: "normal"
+    feedback: "Manual mode stopped"
+
+  # Manual mode - Move cursor
+  - id: "move_left"
+    triggers:
+      - "left"
+    action: move_cursor
+    direction: "left"
+    distance: 40
+    feedback: "Moving cursor left"
+
+  - id: "move_right"
+    triggers:
+      - "right"
+    action: move_cursor
+    direction: "right"
+    distance: 40
+    feedback: "Moving cursor right"
+
+  - id: "move_up"
+    triggers:
+      - "up"
+    action: move_cursor
+    direction: "up"
+    distance: 40
+    feedback: "Moving cursor up"
+
+  - id: "move_down"
+    triggers:
+      - "down"
+    action: move_cursor
+    direction: "down"
+    distance: 40
+    feedback: "Moving cursor down"
+
+  # Manual mode - Click
+  - id: "click_manual"
+    triggers:
+      - "click"
+    action: click
+    coordinates: [0, 0]  # Will use current cursor position
+    feedback: "Clicked"
 

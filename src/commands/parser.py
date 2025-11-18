@@ -1,8 +1,16 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 import re
 from fuzzywuzzy import fuzz
 from logger import logger
 from commands.config import CommandConfig, CommandAction
+
+# Try to load semantic similarity model
+try:
+    from sentence_transformers import SentenceTransformer, util
+    SEMANTIC_AVAILABLE = True
+except ImportError:
+    SEMANTIC_AVAILABLE = False
+    logger.warning("sentence-transformers not available - using fuzzy matching fallback")
 
 
 class CommandParser:
@@ -11,32 +19,164 @@ class CommandParser:
     def __init__(self, config: CommandConfig):
         self.config = config
         self.triggers_map = config.get_all_triggers()
+        
+        # Initialize semantic model if available
+        self.semantic_model = None
+        self.trigger_embeddings = {}  # Cache embeddings
+        
+        if SEMANTIC_AVAILABLE:
+            try:
+                logger.info("Loading semantic similarity model...")
+                self.semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
+                self._build_trigger_embeddings()
+                logger.info("✓ Semantic model loaded successfully")
+            except Exception as e:
+                logger.warning(f"Failed to load semantic model: {e}")
+                self.semantic_model = None
+
+    def _build_trigger_embeddings(self):
+        """Pre-compute embeddings for all triggers"""
+        if not self.semantic_model:
+            return
+        
+        try:
+            all_triggers = []
+            
+            for cmd in self.config.commands:
+                for trigger in cmd.triggers:
+                    all_triggers.append(trigger)
+            
+            # Encode all triggers at once (efficient batch)
+            embeddings = self.semantic_model.encode(all_triggers, convert_to_tensor=True)
+            
+            # Store embeddings
+            for trigger, embedding in zip(all_triggers, embeddings):
+                self.trigger_embeddings[trigger] = embedding
+            
+            logger.debug(f"Built embeddings for {len(all_triggers)} triggers")
+        except Exception as e:
+            logger.error(f"Error building embeddings: {e}")
 
     @staticmethod
     def _normalize_text(text: str) -> str:
         """Normalize text: lowercase, strip whitespace, remove punctuation"""
-        # Lowercase and strip
         text = text.lower().strip()
-        # Remove punctuation (keep only alphanumeric and spaces)
         text = re.sub(r'[^\w\s]', '', text)
-        # Collapse multiple spaces into one
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
 
-    def parse(self, transcript: str) -> Optional[Tuple[CommandAction, float]]:
+    def parse(self, transcript: str, mode: str = "normal") -> Optional[Tuple[CommandAction, float]]:
         """
         Parse transcript and find matching command.
         Returns (CommandAction, confidence_score) or None if no match.
         Handles variations like "open chrome", "Open Chrome.", "Open Chrome?"
+        
+        In dictation mode, only exact matches for "enter" and "clear" are allowed.
+        In manual mode, only exact matches for "left", "right", "up", "down", "click", and mode commands are allowed.
         """
         if not transcript or not transcript.strip():
             return None
 
         transcript_clean = self._normalize_text(transcript)
+        
+        # In dictation mode, ONLY allow "enter" and "stop dictation"
+        if mode == "dictation":
+            # Only allow these exact commands in dictation mode
+            if transcript_clean == "enter" or transcript_clean == "return":
+                # Find and return the send command (which handles enter/return)
+                for cmd in self.config.commands:
+                    if cmd.id == "send":
+                        logger.info(f"✅ Matched: {cmd.id} (exact match in dictation mode)")
+                        return cmd, 1.0
+            elif transcript_clean == "stop dictation" or transcript_clean == "end dictation" or transcript_clean == "done":
+                # Allow exit dictation mode commands
+                for cmd in self.config.commands:
+                    if cmd.id == "stop_dictation":
+                        logger.info(f"✅ Matched: {cmd.id} (exact match in dictation mode - exit)")
+                        return cmd, 1.0
+            
+            # In dictation mode, ignore EVERYTHING else - even if it matches a command
+            logger.debug(f"Dictation mode: ignoring '{transcript}' (not enter/stop dictation)")
+            return None
+        
+        # In manual mode, only allow movement and click commands
+        if mode == "manual":
+            # Check for exact direction matches
+            if transcript_clean == "left":
+                for cmd in self.config.commands:
+                    if cmd.id == "move_left":
+                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
+                        return cmd, 1.0
+            elif transcript_clean == "right":
+                for cmd in self.config.commands:
+                    if cmd.id == "move_right":
+                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
+                        return cmd, 1.0
+            elif transcript_clean == "up":
+                for cmd in self.config.commands:
+                    if cmd.id == "move_up":
+                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
+                        return cmd, 1.0
+            elif transcript_clean == "down":
+                for cmd in self.config.commands:
+                    if cmd.id == "move_down":
+                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
+                        return cmd, 1.0
+            elif transcript_clean == "click":
+                for cmd in self.config.commands:
+                    if cmd.id == "click_manual":
+                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
+                        return cmd, 1.0
+            # Allow mode change commands (exit manual mode)
+            elif transcript_clean == "stop manual mode" or transcript_clean == "exit manual mode" or transcript_clean == "done":
+                for cmd in self.config.commands:
+                    if cmd.id == "stop_manual_mode":
+                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
+                        return cmd, 1.0
+            
+            # In manual mode, ignore everything else
+            logger.debug(f"Manual mode: ignoring non-command text '{transcript}'")
+            return None
+        
+        # Normal mode matching - Use semantic similarity if available
         best_match = None
         best_score = 0.0
 
-        # Try to match against all triggers
+        if self.semantic_model and self.trigger_embeddings:
+            # Semantic matching (more robust)
+            try:
+                # Encode the transcript
+                transcript_embedding = self.semantic_model.encode(transcript, convert_to_tensor=True)
+                
+                # Compare against all trigger embeddings
+                for cmd in self.config.commands:
+                    for trigger in cmd.triggers:
+                        if trigger in self.trigger_embeddings:
+                            trigger_embedding = self.trigger_embeddings[trigger]
+                            # Calculate cosine similarity (0-1 range)
+                            similarity = util.pytorch_cos_sim(
+                                transcript_embedding, trigger_embedding
+                            )[0][0].item()
+                            
+                            if (
+                                similarity > best_score
+                                and similarity >= self.config.app_config.match_threshold
+                            ):
+                                best_match = cmd
+                                best_score = similarity
+                
+                if best_match:
+                    logger.info(
+                        f"✅ Matched: {best_match.id} (semantic score: {best_score:.2f})"
+                    )
+                    return best_match, best_score
+            except Exception as e:
+                logger.warning(f"Semantic matching failed: {e}, falling back to fuzzy matching")
+        
+        # Fallback to fuzzy matching (if semantic not available or failed)
+        best_match = None
+        best_score = 0.0
+        
         for cmd in self.config.commands:
             for trigger in cmd.triggers:
                 trigger_clean = self._normalize_text(trigger)
@@ -55,7 +195,7 @@ class CommandParser:
 
         if best_match:
             logger.info(
-                f"✅ Matched: {best_match.id} (score: {best_score:.2f})"
+                f"✅ Matched: {best_match.id} (fuzzy score: {best_score:.2f})"
             )
             return best_match, best_score
         else:

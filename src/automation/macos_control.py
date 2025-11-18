@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from Quartz import (
     CGEventCreateMouseEvent,
     CGEventPost,
@@ -13,7 +13,9 @@ from Quartz import (
     kCGEventKeyDown,
     kCGEventKeyUp,
     CGEventSetFlags,
+    kCGEventMouseMoved,
 )
+import Quartz
 from Cocoa import NSEvent
 from AppKit import NSWorkspace
 from logger import logger
@@ -197,4 +199,72 @@ class MacOSControl:
 
         except Exception as e:
             logger.error(f"Error typing text: {e}")
+
+    def get_mouse_position(self) -> Tuple[int, int]:
+        """Get current mouse position in screen coordinates"""
+        try:
+            # Use Quartz to get position in screen coordinate system
+            # Create a dummy event to get current mouse location
+            from Quartz import CGEventCreate, CGEventGetLocation
+            # Use NULL tap source - doesn't post events, just queries
+            event = CGEventCreate(None)
+            if event:
+                location = CGEventGetLocation(event)
+                x = int(location.x)
+                y = int(location.y)
+                logger.debug(f"Mouse position: ({x}, {y})")
+                return (x, y)
+            else:
+                logger.error("Failed to create event for position query")
+                return (0, 0)
+        except Exception as e:
+            logger.error(f"Error getting mouse position: {e}")
+            return (0, 0)
+
+    def move_cursor(self, direction: str, distance: int = 15):
+        """Move cursor in a direction by a given distance"""
+        try:
+            x, y = self.get_mouse_position()
+            
+            # Calculate new position based on direction
+            if direction.lower() == "left":
+                new_x, new_y = x - distance, y
+            elif direction.lower() == "right":
+                new_x, new_y = x + distance, y
+            elif direction.lower() == "up":
+                new_x, new_y = x, y - distance
+            elif direction.lower() == "down":
+                new_x, new_y = x, y + distance
+            else:
+                logger.error(f"Unknown direction: {direction}")
+                return
+            
+            # Get screen bounds - use Quartz functions properly
+            try:
+                display_bounds = Quartz.CGDisplayBounds(Quartz.CGMainDisplayID())
+                screen_width = display_bounds.size.width
+                screen_height = display_bounds.size.height
+            except:
+                # Fallback: typical 1080p screen size if we can't get actual bounds
+                screen_width = 2560
+                screen_height = 1600
+            
+            new_x = max(0, min(int(new_x), int(screen_width)))
+            new_y = max(0, min(int(new_y), int(screen_height)))
+            
+            # Move cursor using CGWarpMouseCursorPosition (more reliable)
+            try:
+                from Quartz import CGWarpMouseCursorPosition
+                CGWarpMouseCursorPosition((new_x, new_y))
+                logger.debug(f"Moved cursor {direction} by {distance}px to ({new_x}, {new_y})")
+            except:
+                # Fallback to CGEventCreateMouseEvent if warp doesn't work
+                move_event = CGEventCreateMouseEvent(
+                    None, kCGEventMouseMoved, (new_x, new_y), 0
+                )
+                CGEventPost(kCGHIDEventTap, move_event)
+                logger.debug(f"Moved cursor {direction} by {distance}px to ({new_x}, {new_y}) [fallback]")
+            
+        except Exception as e:
+            logger.error(f"Error moving cursor: {e}")
 

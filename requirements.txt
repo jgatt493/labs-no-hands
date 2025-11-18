@@ -14,10 +14,12 @@ deepgram-sdk>=3.0.0
 
 # Command Matching
 fuzzywuzzy>=0.18.0
+sentence-transformers>=2.2.0
 
 # macOS Automation
 PyObjC>=9.0
 
 # Logging & Utils
 colorama>=0.4.0
+watchdog>=3.0.0
 

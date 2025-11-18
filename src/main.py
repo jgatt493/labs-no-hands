@@ -17,6 +17,38 @@ from commands.config import CommandConfig
 from commands.parser import CommandParser
 from commands.executor import CommandExecutor
 
+# File watcher for hot reload
+try:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler
+    WATCHDOG_AVAILABLE = True
+except ImportError:
+    WATCHDOG_AVAILABLE = False
+
+
+class ConfigFileHandler(FileSystemEventHandler):
+    """Handles configuration file changes for hot reload"""
+    
+    def __init__(self, app):
+        self.app = app
+        self.last_reload_time = 0
+        self.debounce_delay = 1  # Prevent multiple reloads within 1 second
+    
+    def on_modified(self, event):
+        """Called when a file is modified"""
+        if event.is_directory:
+            return
+        
+        # Check if it's the commands.yaml file
+        if 'commands.yaml' in event.src_path:
+            current_time = time.time()
+            # Debounce: prevent multiple reloads in rapid succession
+            if current_time - self.last_reload_time > self.debounce_delay:
+                self.last_reload_time = current_time
+                logger.info("🔄 Config file changed, reloading...")
+                # Set flag for reload - will be picked up by main loop
+                self.app.config_reload_pending = True
+
 
 class VoiceCommandApp:
     """Main voice command application"""
@@ -32,6 +64,8 @@ class VoiceCommandApp:
         self.last_transcript = None
         self.pending_command = None
         self.mode = "normal"  # "normal" or "dictation"
+        self.file_observer = None  # File watcher for hot reload
+        self.config_reload_pending = False  # Flag for pending config reload
 
     async def initialize(self):
         """Initialize audio and Deepgram"""
@@ -64,6 +98,41 @@ class VoiceCommandApp:
             logger.error(f"Initialization error: {e}")
             return False
 
+    async def reload_config(self):
+        """Reload configuration without stopping the app"""
+        try:
+            logger.info("Reloading configuration...")
+            self.config.reload()
+            self.parser = CommandParser(self.config)
+            self.executor = CommandExecutor(self.config)
+            logger.info("✅ Configuration reloaded successfully")
+        except Exception as e:
+            logger.error(f"❌ Error reloading configuration: {e}")
+
+    def start_file_watcher(self):
+        """Start watching config file for changes (hot reload)"""
+        if not WATCHDOG_AVAILABLE:
+            logger.warning("⚠️  watchdog not installed - hot reload disabled")
+            logger.info("Install with: pip install watchdog")
+            return
+        
+        try:
+            config_dir = self.config_path.parent
+            self.file_observer = Observer()
+            event_handler = ConfigFileHandler(self)
+            self.file_observer.schedule(event_handler, str(config_dir), recursive=False)
+            self.file_observer.start()
+            logger.info("🔍 File watcher started - hot reload enabled")
+        except Exception as e:
+            logger.error(f"Error starting file watcher: {e}")
+
+    def stop_file_watcher(self):
+        """Stop watching config file"""
+        if self.file_observer:
+            self.file_observer.stop()
+            self.file_observer.join()
+            logger.info("File watcher stopped")
+
     async def run(self):
         """Main application loop"""
         if not await self.initialize():
@@ -71,6 +140,9 @@ class VoiceCommandApp:
             return
 
         self.is_running = True
+        
+        # Start file watcher for hot reload
+        self.start_file_watcher()
 
         try:
             # Start recording and connect to Deepgram
@@ -85,6 +157,7 @@ class VoiceCommandApp:
             logger.error(f"Error in main loop: {e}")
         finally:
             self.is_running = False
+            self.stop_file_watcher()
             if self.deepgram:
                 await self.deepgram.close()
 
@@ -147,8 +220,8 @@ class VoiceCommandApp:
         # Try to match command FIRST (always check commands, even in dictation mode)
         if result.is_final:
             # Final result - try command matching first
-            logger.info(f"🔍 Parsing: '{result.transcript}'")
-            match = self.parser.parse(result.transcript)
+            logger.info(f"🔍 Parsing: '{result.transcript}' (mode: {self.mode})")
+            match = self.parser.parse(result.transcript, mode=self.mode)
 
             if match:
                 # Command matched - execute it
@@ -172,6 +245,11 @@ class VoiceCommandApp:
                     self.executor.macos.type_text(result.transcript + " ")
                 else:
                     logger.info(f"❌ No command matched (threshold: {self.config.app_config.match_threshold})")
+            
+            # Check if config reload is pending
+            if self.config_reload_pending:
+                self.config_reload_pending = False
+                await self.reload_config()
 
         else:
             # Interim result - show potential match
@@ -193,15 +271,16 @@ def cli():
 
 
 @cli.command()
-@click.option('--detect-device', is_flag=True, help='Wait for Jabra device before starting')
-def run(detect_device):
-    """Run voice listener (foreground)"""
+@click.option('--no-detect-device', is_flag=True, help='Skip Jabra device detection (start immediately)')
+def run(no_detect_device):
+    """Run voice listener (foreground) - waits for Jabra by default"""
     app = VoiceCommandApp()
-    if detect_device:
-        logger.info("Starting with device detection mode...")
-        asyncio.run(app.run_with_device_detection())
-    else:
+    if no_detect_device:
+        logger.info("Starting without device detection...")
         asyncio.run(app.run())
+    else:
+        logger.info("Starting with Jabra device detection...")
+        asyncio.run(app.run_with_device_detection())
 
 
 @cli.command()
