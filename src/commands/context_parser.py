@@ -117,7 +117,13 @@ class ContextAwareParser:
         if not transcript or not transcript.strip():
             return None
 
-        words = transcript.lower().strip().split()
+        # Normalize the transcript first (remove punctuation, lowercase, etc)
+        import re
+        transcript_normalized = transcript.lower().strip()
+        transcript_normalized = re.sub(r'[^\w\s]', '', transcript_normalized)  # Remove punctuation
+        transcript_normalized = re.sub(r'\s+', ' ', transcript_normalized)  # Collapse spaces
+        
+        words = transcript_normalized.split()
 
         if len(words) < 2:
             # Need at least primary word + alias
