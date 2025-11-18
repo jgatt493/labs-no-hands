@@ -122,6 +122,27 @@ class CommandParser:
         self.semantic_model = None
         self.trigger_embeddings = {}  # Cache embeddings
         
+        # Mode-specific command mappings for strict matching
+        self.mode_commands = {
+            "dictation": {
+                "enter": ["send"],
+                "return": ["send"],
+                "stop dictation": ["stop_dictation"],
+                "end dictation": ["stop_dictation"],
+                "done": ["stop_dictation"],
+            },
+            "manual": {
+                "left": ["move_left"],
+                "right": ["move_right"],
+                "up": ["move_up"],
+                "down": ["move_down"],
+                "click": ["click_manual"],
+                "stop manual mode": ["stop_manual_mode"],
+                "exit manual mode": ["stop_manual_mode"],
+                "done": ["stop_manual_mode"],
+            },
+        }
+        
         if SEMANTIC_AVAILABLE:
             try:
                 logger.info("Loading semantic similarity model...")
@@ -162,81 +183,58 @@ class CommandParser:
         text = re.sub(r'[^\w\s]', '', text)
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
+    
+    def _get_command_by_id(self, command_id: str) -> Optional[CommandAction]:
+        """Get a command by its ID"""
+        for cmd in self.config.commands:
+            if cmd.id == command_id:
+                return cmd
+        return None
+    
+    def _try_mode_match(self, transcript_clean: str, mode: str) -> Optional[Tuple[CommandAction, float]]:
+        """Try to match using mode-specific strict matching"""
+        if mode not in self.mode_commands:
+            return None
+        
+        mode_map = self.mode_commands[mode]
+        
+        # Check if transcript matches any allowed command in this mode
+        if transcript_clean in mode_map:
+            command_ids = mode_map[transcript_clean]
+            cmd = self._get_command_by_id(command_ids[0])
+            if cmd:
+                logger.info(f"✅ Matched: {cmd.id} (exact match in {mode} mode)")
+                return cmd, 1.0
+        
+        return None
 
     def parse(self, transcript: str, mode: str = "normal") -> Optional[Tuple[CommandAction, float]]:
         """
         Parse transcript and find matching command.
         Returns (CommandAction, confidence_score) or None if no match.
-        Handles variations like "open chrome", "Open Chrome.", "Open Chrome?"
         
-        In dictation mode, only exact matches for "enter" and "clear" are allowed.
-        In manual mode, only exact matches for "left", "right", "up", "down", "click", and mode commands are allowed.
+        Parsing order:
+        1. Mode-specific strict matching (dictation, manual)
+        2. Context-aware matching (open X, focus X, etc)
+        3. Semantic similarity matching
+        4. Fuzzy matching fallback
         """
         if not transcript or not transcript.strip():
             return None
 
         transcript_clean = self._normalize_text(transcript)
         
-        # In dictation mode, ONLY allow "enter" and "stop dictation"
-        if mode == "dictation":
-            # Only allow these exact commands in dictation mode
-            if transcript_clean == "enter" or transcript_clean == "return":
-                # Find and return the send command (which handles enter/return)
-                for cmd in self.config.commands:
-                    if cmd.id == "send":
-                        logger.info(f"✅ Matched: {cmd.id} (exact match in dictation mode)")
-                        return cmd, 1.0
-            elif transcript_clean == "stop dictation" or transcript_clean == "end dictation" or transcript_clean == "done":
-                # Allow exit dictation mode commands
-                for cmd in self.config.commands:
-                    if cmd.id == "stop_dictation":
-                        logger.info(f"✅ Matched: {cmd.id} (exact match in dictation mode - exit)")
-                        return cmd, 1.0
-            
-            # In dictation mode, ignore EVERYTHING else - even if it matches a command
-            logger.debug(f"Dictation mode: ignoring '{transcript}' (not enter/stop dictation)")
+        # Try mode-specific strict matching first
+        mode_result = self._try_mode_match(transcript_clean, mode)
+        if mode_result is not None:
+            return mode_result
+        
+        # If in special mode and no match, ignore everything else
+        if mode in self.mode_commands:
+            logger.debug(f"{mode} mode: ignoring '{transcript}' (not in allowed commands)")
             return None
         
-        # In manual mode, only allow movement and click commands
-        if mode == "manual":
-            # Check for exact direction matches
-            if transcript_clean == "left":
-                for cmd in self.config.commands:
-                    if cmd.id == "move_left":
-                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
-                        return cmd, 1.0
-            elif transcript_clean == "right":
-                for cmd in self.config.commands:
-                    if cmd.id == "move_right":
-                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
-                        return cmd, 1.0
-            elif transcript_clean == "up":
-                for cmd in self.config.commands:
-                    if cmd.id == "move_up":
-                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
-                        return cmd, 1.0
-            elif transcript_clean == "down":
-                for cmd in self.config.commands:
-                    if cmd.id == "move_down":
-                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
-                        return cmd, 1.0
-            elif transcript_clean == "click":
-                for cmd in self.config.commands:
-                    if cmd.id == "click_manual":
-                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
-                        return cmd, 1.0
-            # Allow mode change commands (exit manual mode)
-            elif transcript_clean == "stop manual mode" or transcript_clean == "exit manual mode" or transcript_clean == "done":
-                for cmd in self.config.commands:
-                    if cmd.id == "stop_manual_mode":
-                        logger.info(f"✅ Matched: {cmd.id} (exact match in manual mode)")
-                        return cmd, 1.0
-            
-            # In manual mode, ignore everything else
-            logger.debug(f"Manual mode: ignoring non-command text '{transcript}'")
-            return None
-        
-        # Normal mode: Try context-aware parser first
+        # Normal mode: Try context-aware parser
         context_result = self.context_parser.parse_context(transcript, mode)
         if context_result:
             cmd, score = context_result
