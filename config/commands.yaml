@@ -659,7 +659,7 @@ commands:
     triggers:
       - "new line"
     action: keystroke
-    keys: ["return"]
+    keys: ["cmd", "return"]
     feedback: "New line"
     mode_only: "dictation"  # Only works in dictation mode
 
