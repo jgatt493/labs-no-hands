@@ -677,6 +677,11 @@ commands:
     action: "context_press"
     primary_trigger: "press"
     keys:
+      enter:
+        triggers: ["enter", "return"]
+        key: "return"
+        feedback: "Pressed enter"
+      
       escape:
         triggers: ["escape", "esc"]
         key: "escape"
