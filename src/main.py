@@ -5,6 +5,9 @@ import os
 import time
 from pathlib import Path
 
+# Suppress huggingface tokenizers warning about parallelism
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
