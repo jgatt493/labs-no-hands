@@ -185,25 +185,74 @@ class CommandParser:
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
     
+    def _try_press_command(self, transcript: str, transcript_clean: str) -> Optional[Tuple[CommandAction, float]]:
+        """Check if this is a 'press' context command (LAYER 1 - highest priority)"""
+        words = transcript_clean.split()
+        if len(words) < 2 or words[0] != "press":
+            return None
+        
+        # Try context parser for press command
+        result = self.context_parser.parse_context(transcript)
+        if result and result[0].action == "keystroke":
+            return result
+        
+        return None
+    
+    def _try_dictation_exact_match(self, transcript: str, transcript_clean: str) -> Optional[Tuple[CommandAction, float]]:
+        """Check for exact-match dictation commands (LAYER 2 - in dictation mode only)"""
+        # Look for commands that have mode_only="dictation"
+        for cmd in self.config.commands:
+            if cmd.mode_only != "dictation":
+                continue
+            
+            # For mode-only commands, require exact match of one trigger
+            for trigger in cmd.triggers:
+                if transcript_clean == trigger.lower():
+                    logger.debug(f"Dictation exact match: '{trigger}' → {cmd.id}")
+                    return cmd, 1.0
+        
+        return None
 
     def parse(self, transcript: str, mode: str = "normal", app: str = None) -> Optional[Tuple[CommandAction, float]]:
         """
-        Parse transcript using 4-path execution model:
-        1. Context-aware parsing (keywords: open/start/stop/close)
-        2. App-specific command parsing (if app is set)
-        3. Semantic similarity matching (global commands)
-        4. Fuzzy matching fallback (global commands)
+        Parse transcript using LAYERED priority system:
         
-        Mode filtering happens via context commands and command definitions.
-        App-specific commands are loaded and cached automatically.
+        LAYER 1 (Always): Press commands (e.g., "press escape")
+        LAYER 2 (If in dictation mode): Exact-match dictation commands (e.g., "new line", "select all")
+        LAYER 3 (If not in special mode): Context-aware parsing (open/start/stop/close)
+        LAYER 4 (Normal/App context): App-specific or global semantic/fuzzy matching
+        
+        This ensures press commands work anywhere, dictation has strict controls,
+        and context/app commands are priority-ordered appropriately.
         """
         if not transcript or not transcript.strip():
             return None
 
         transcript_clean = self._normalize_text(transcript)
         
-        # PATH 1: Try context-aware parser (handles keywords + mode filtering)
-        logger.debug(f"Trying context-aware parser for: '{transcript}'")
+        # LAYER 1: Always check for "press" commands first (highest priority)
+        logger.debug(f"LAYER 1: Checking for press command in: '{transcript}'")
+        press_result = self._try_press_command(transcript, transcript_clean)
+        if press_result:
+            cmd, score = press_result
+            logger.info(f"✅ Matched: {cmd.id} (press command, score: {score:.2f})")
+            return cmd, score
+        
+        # LAYER 2: If in dictation mode, check exact-match dictation commands
+        if mode == "dictation":
+            logger.debug(f"LAYER 2: In dictation mode, checking exact-match commands")
+            dictation_result = self._try_dictation_exact_match(transcript, transcript_clean)
+            if dictation_result:
+                cmd, score = dictation_result
+                logger.info(f"✅ Matched: {cmd.id} (dictation exact, score: {score:.2f})")
+                return cmd, score
+            
+            # In dictation mode, if no exact match, ignore all other commands (type as text)
+            logger.debug(f"Dictation mode: no exact match found, typing as text")
+            return None
+        
+        # LAYER 3: Try context-aware parser (handles keywords + app/mode context)
+        logger.debug(f"LAYER 3: Trying context-aware parser for: '{transcript}'")
         context_result = self.context_parser.parse_context(transcript, mode)
         if context_result:
             cmd, score = context_result
@@ -211,12 +260,12 @@ class CommandParser:
             return cmd, score
         logger.debug(f"No context match for: '{transcript}'")
         
-        # In dictation/manual mode, if context match failed, ignore all other commands
-        if mode in ("dictation", "manual"):
-            logger.debug(f"{mode} mode: no context match found, ignoring input")
+        # In manual mode, if context match failed, ignore all other commands
+        if mode == "manual":
+            logger.debug(f"Manual mode: no context match found, ignoring input")
             return None
         
-        # PATH 2: Try app-specific commands (if app is set)
+        # LAYER 4: Try app-specific commands (if app is set)
         if app:
             if self.load_app_commands(app):
                 logger.debug(f"Trying app-specific commands for: {app}")

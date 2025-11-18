@@ -653,6 +653,24 @@ commands:
     keys: ["return"]
     feedback: "Sent"
 
+  # Dictation mode - Exact match commands (only work in dictation mode)
+  # These require EXACT matching, no fuzzy matching
+  - id: "dictation_new_line"
+    triggers:
+      - "new line"
+    action: keystroke
+    keys: ["return"]
+    feedback: "New line"
+    mode_only: "dictation"  # Only works in dictation mode
+
+  - id: "dictation_select_all"
+    triggers:
+      - "select all"
+    action: keystroke
+    keys: ["cmd", "a"]
+    feedback: "Selected all"
+    mode_only: "dictation"  # Only works in dictation mode
+
   # CONTEXT-AWARE: Press keystroke commands
   # Usage: "press escape", "press backspace", "press space", etc.
   - id: "context_press"
