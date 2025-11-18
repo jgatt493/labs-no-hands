@@ -68,7 +68,7 @@ commands:
         feedback: "Opening Spotify"
 
   # CONTEXT-AWARE: Start modes
-  # Usage: "start dictation", "start manual"
+  # Usage: "start dictation", "start manual", "dictation mode", "manual mode", etc.
   - id: "context_start_mode"
     action: "context_mode"
     primary_trigger: "start"
@@ -84,6 +84,24 @@ commands:
         action: mode
         mode: "manual"
         feedback: "Starting manual mode"
+  
+  # Shortcuts for mode switching without "start" keyword
+  - id: "quick_dictation_mode"
+    triggers:
+      - "dictation mode"
+      - "dictation"
+      - "dictate"
+    action: mode
+    mode: "dictation"
+    feedback: "Starting dictation mode"
+  
+  - id: "quick_manual_mode"
+    triggers:
+      - "manual mode"
+      - "manual"
+    action: mode
+    mode: "manual"
+    feedback: "Starting manual mode"
 
   # CONTEXT-AWARE: Stop modes
   # Usage: "stop dictation", "stop manual"
