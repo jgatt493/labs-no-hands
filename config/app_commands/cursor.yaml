@@ -1,7 +1,6 @@
 # Cursor App - Specific Commands
 # These commands ONLY work when Cursor app is active
 # Loaded dynamically when app state = "Cursor"
-# Note: Uses config from main commands.yaml, no need to duplicate
 
 commands:
   # Chat panel toggle
@@ -9,188 +8,24 @@ commands:
     triggers:
       - "toggle chat"
       - "chat toggle"
-      - "show chat"
-      - "hide chat"
     action: keystroke
     keys: ["cmd", "option", "b"]
     feedback: "Toggling chat panel"
+
+  # Projects panel toggle
+  - id: "toggle_project"
+    triggers:
+      - "toggle project"
+      - "project toggle"
+    action: keystroke
+    keys: ["cmd", "shift", "e"]
+    feedback: "Toggling projects panel"
 
   # Terminal toggle (within Cursor)
   - id: "toggle_terminal_cursor"
     triggers:
       - "toggle terminal"
       - "terminal toggle"
-      - "show terminal"
-      - "hide terminal"
     action: keystroke
     keys: ["cmd", "j"]
     feedback: "Toggling integrated terminal"
-
-  # Files/Explorer panel toggle
-  - id: "toggle_files"
-    triggers:
-      - "toggle files"
-      - "files toggle"
-      - "show files"
-      - "hide files"
-      - "toggle explorer"
-      - "explorer toggle"
-    action: keystroke
-    keys: ["cmd", "b"]
-    feedback: "Toggling files panel"
-
-  # Inline edit (Cursor AI feature)
-  - id: "cursor_inline_edit"
-    triggers:
-      - "edit"
-      - "inline edit"
-      - "cursor edit"
-      - "edit here"
-    action: keystroke
-    keys: ["cmd", "i"]
-    feedback: "Opening inline edit"
-
-  # Composer (Cursor multi-edit feature)
-  - id: "cursor_composer"
-    triggers:
-      - "composer"
-      - "multi edit"
-      - "open composer"
-      - "cursor composer"
-    action: keystroke
-    keys: ["cmd", "shift", "l"]
-    feedback: "Opening composer"
-
-  # Cursor Chat (ask Cursor AI)
-  - id: "cursor_ask_ai"
-    triggers:
-      - "ask cursor"
-      - "ask ai"
-      - "cursor help"
-      - "ask"
-      - "chat"
-      - "cursor chat"
-    action: keystroke
-    keys: ["cmd", "k"]
-    feedback: "Opening Cursor chat"
-
-  # Focus on editor
-  - id: "focus_editor"
-    triggers:
-      - "focus editor"
-      - "editor focus"
-      - "back to editor"
-    action: keystroke
-    keys: ["cmd", "1"]
-    feedback: "Focusing editor"
-
-  # Focus on explorer
-  - id: "focus_explorer"
-    triggers:
-      - "focus explorer"
-      - "explorer focus"
-      - "show sidebar"
-    action: keystroke
-    keys: ["cmd", "b"]
-    feedback: "Focusing explorer"
-
-  # Go to file
-  - id: "go_to_file"
-    triggers:
-      - "go to file"
-      - "open file"
-      - "find file"
-    action: keystroke
-    keys: ["cmd", "p"]
-    feedback: "Opening file picker"
-
-  # Command palette
-  - id: "command_palette"
-    triggers:
-      - "command palette"
-      - "commands"
-      - "palette"
-      - "command"
-    action: keystroke
-    keys: ["cmd", "shift", "p"]
-    feedback: "Opening command palette"
-
-  # Format document
-  - id: "format_code"
-    triggers:
-      - "format"
-      - "format code"
-      - "prettier"
-    action: keystroke
-    keys: ["option", "shift", "f"]
-    feedback: "Formatting document"
-
-  # Quick fix
-  - id: "quick_fix"
-    triggers:
-      - "quick fix"
-      - "fix"
-      - "fix this"
-    action: keystroke
-    keys: ["cmd", "."]
-    feedback: "Opening quick fix"
-
-  # Rename symbol
-  - id: "rename_symbol"
-    triggers:
-      - "rename"
-      - "rename this"
-      - "refactor"
-    action: keystroke
-    keys: ["f2"]
-    feedback: "Renaming symbol"
-
-  # Find references
-  - id: "find_references"
-    triggers:
-      - "find references"
-      - "where used"
-      - "usages"
-    action: keystroke
-    keys: ["shift", "option", "f12"]
-    feedback: "Finding references"
-
-  # Go to definition
-  - id: "go_to_definition"
-    triggers:
-      - "go to definition"
-      - "definition"
-      - "jump to"
-    action: keystroke
-    keys: ["f12"]
-    feedback: "Going to definition"
-
-  # Close tab
-  - id: "close_tab"
-    triggers:
-      - "close tab"
-      - "close file"
-    action: keystroke
-    keys: ["cmd", "w"]
-    feedback: "Closing tab"
-
-  # Sidebar toggle
-  - id: "toggle_sidebar"
-    triggers:
-      - "toggle sidebar"
-      - "sidebar toggle"
-      - "toggle activity bar"
-    action: keystroke
-    keys: ["cmd", "b"]
-    feedback: "Toggling sidebar"
-
-  # Zen mode
-  - id: "zen_mode"
-    triggers:
-      - "zen mode"
-      - "focus mode"
-      - "distraction free"
-    action: keystroke
-    keys: ["cmd", "k", "z"]
-    feedback: "Entering zen mode"
-
