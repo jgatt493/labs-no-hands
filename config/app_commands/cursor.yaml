@@ -87,6 +87,8 @@ commands:
       - "ask ai"
       - "cursor help"
       - "ask"
+      - "chat"
+      - "cursor chat"
     action: keystroke
     keys: ["cmd", "k"]
     feedback: "Opening Cursor chat"
