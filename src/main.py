@@ -221,8 +221,12 @@ class VoiceCommandApp:
         # Try to match command FIRST (always check commands, even in dictation mode)
         if result.is_final:
             # Final result - try command matching first
-            logger.info(f"🔍 Parsing: '{result.transcript}' (mode: {self.app_state.mode})")
-            match = self.parser.parse(result.transcript, mode=self.app_state.mode)
+            logger.info(f"🔍 Parsing: '{result.transcript}' (mode: {self.app_state.mode}, app: {self.app_state.app})")
+            match = self.parser.parse(
+                result.transcript, 
+                mode=self.app_state.mode,
+                app=self.app_state.app  # Pass active app for app-specific commands
+            )
 
             if match:
                 # Command matched - execute it
