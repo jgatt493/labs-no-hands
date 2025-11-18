@@ -211,6 +211,11 @@ class CommandParser:
             return cmd, score
         logger.debug(f"No context match for: '{transcript}'")
         
+        # In dictation/manual mode, if context match failed, ignore all other commands
+        if mode in ("dictation", "manual"):
+            logger.debug(f"{mode} mode: no context match found, ignoring input")
+            return None
+        
         # PATH 2: Try app-specific commands (if app is set)
         if app:
             if self.load_app_commands(app):
